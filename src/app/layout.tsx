@@ -73,13 +73,6 @@ export default function RootLayout({
       className={`${inter.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <Script
-          id="theme-boot"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
-        />
-      </head>
       <body className="min-h-full bg-background text-foreground font-sans">
         <ThemeProvider>
           <Providers>
@@ -97,6 +90,11 @@ export default function RootLayout({
             }}
           />
         </ThemeProvider>
+        <Script
+          id="theme-boot"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
+        />
       </body>
     </html>
   );
