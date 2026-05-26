@@ -20,7 +20,7 @@ interface Profile {
 }
 
 interface AuthContextValue {
-  user: { id: string; email: string; name?: string | null; image?: string | null } | null;
+  user: { id: string; email: string; name?: string | null; image?: string | null; twoFactorEnabled?: boolean } | null;
   profile: Profile | null;
   loading: boolean;
   profileLoading: boolean;
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user: user ? { id: user.id, email: user.email!, name: user.name, image: user.image } : null,
+        user: user ? { id: user.id, email: user.email!, name: user.name, image: user.image, twoFactorEnabled: (user as { twoFactorEnabled?: boolean }).twoFactorEnabled } : null,
         profile,
         loading: status === "loading",
         profileLoading,

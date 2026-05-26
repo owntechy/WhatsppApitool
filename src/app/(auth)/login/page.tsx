@@ -14,13 +14,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<"credentials" | "otp">("credentials");
+  const [devOtp, setDevOtp] = useState<string | null>(null);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -28,20 +31,187 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const res = await fetch("/api/auth/login-validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (result?.error) {
-      setError("Invalid email or password");
+      if (!res.ok) {
+        let message = "Invalid email or password";
+        try {
+          const errData = await res.json();
+          if (errData.error) message = errData.error;
+        } catch {}
+        setError(message);
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data.step === "2fa") {
+        if (data.devOtp) {
+          setDevOtp(data.devOtp);
+        }
+        setStep("otp");
+        setLoading(false);
+        return;
+      }
+
+      if (data.step === "signin" && data.loginToken) {
+        const result = await signIn("credentials", {
+          loginToken: data.loginToken,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setError("Something went wrong. Please try again.");
+          setLoading(false);
+          return;
+        }
+
+        router.push("/dashboard");
+        return;
+      }
+
+      setError("Unexpected response");
       setLoading(false);
-      return;
+    } catch {
+      setError("Something went wrong");
+      setLoading(false);
     }
-
-    router.push("/dashboard");
   };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const verifyRes = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const verifyData = await verifyRes.json();
+
+      if (!verifyRes.ok) {
+        setError(verifyData.error || "Invalid or expired code");
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch("/api/auth/login-validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signInToken: verifyData.signInToken }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.step !== "signin" || !data.loginToken) {
+        setError("Something went wrong. Please try logging in again.");
+        setStep("credentials");
+        setLoading(false);
+        return;
+      }
+
+      const result = await signIn("credentials", {
+        loginToken: data.loginToken,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Something went wrong. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/dashboard");
+    } catch {
+      setError("Something went wrong");
+      setLoading(false);
+    }
+  };
+
+  if (step === "otp") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+        <Card className="w-full max-w-md border-slate-800 bg-slate-900">
+          <CardHeader className="items-center text-center">
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <MessageSquare className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-xl text-white">Two-factor authentication</CardTitle>
+            <CardDescription className="text-slate-400">
+              Enter the verification code sent to{" "}
+              <strong className="text-slate-300">{email}</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleOtpSubmit} className="flex flex-col gap-4">
+              {error && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {error}
+                </div>
+              )}
+
+              {devOtp && (
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+                  [DEV MODE] Your OTP is:{" "}
+                  <strong className="font-mono text-base">{devOtp}</strong>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="otp" className="text-slate-300">
+                  Verification code
+                </Label>
+                <Input
+                  id="otp"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="000000"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) =>
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  required
+                  className="border-slate-700 bg-slate-800 text-center text-2xl tracking-[8px] text-white placeholder:text-slate-500 focus-visible:border-primary focus-visible:ring-primary/20"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading || otp.length !== 6}
+                className="mt-2 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {loading ? "Verifying..." : "Verify"}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("credentials");
+                  setOtp("");
+                  setError(null);
+                  setDevOtp(null);
+                }}
+                className="flex items-center justify-center gap-1 text-sm text-slate-400 hover:text-slate-300"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to login
+              </button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">

@@ -15,9 +15,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const profile = await prisma.profile.findUnique({
-    where: { userId },
-  });
+  const [profile, user] = await Promise.all([
+    prisma.profile.findUnique({ where: { userId } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { twoFactorEnabled: true } }),
+  ]);
 
   if (!profile) {
     return NextResponse.json(null);
@@ -31,5 +32,6 @@ export async function GET(request: Request) {
     avatar_url: profile.avatarUrl,
     role: profile.role,
     beta_features: profile.betaFeatures ? JSON.parse(profile.betaFeatures) : [],
+    two_factor_enabled: user?.twoFactorEnabled ?? false,
   });
 }

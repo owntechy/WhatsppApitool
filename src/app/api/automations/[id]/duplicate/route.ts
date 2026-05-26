@@ -42,7 +42,7 @@ export async function POST(
         : Math.random().toString(36).slice(2) + Date.now().toString(36)
     for (const row of steps) idMap.set(row.id, uid())
 
-    const rows = steps.map((row) => ({
+    const rows = steps.map((row: typeof steps[number]) => ({
       id: idMap.get(row.id)!,
       automationId: copy.id,
       parentStepId: row.parentStepId ? idMap.get(row.parentStepId) : null,

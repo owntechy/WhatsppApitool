@@ -43,8 +43,10 @@ model User {
   password      String?
   fullName      String?
   image         String?
-  role          String    @default("user")
-  betaFeatures  String?   @map("beta_features")
+  role              String    @default("user")
+  betaFeatures      String?   @map("beta_features")
+  twoFactorEnabled  Boolean   @default(true) @map("two_factor_enabled")
+  status            String    @default("active")
 
   accounts          Account[]
   sessions          Session[]
@@ -63,6 +65,7 @@ model User {
   automationLogs    AutomationLog[]
   flows             Flow[]
   flowRuns          FlowRun[]
+  verificationCodes VerificationCode[]
 
   @@map("users")
 }
@@ -543,6 +546,25 @@ model FlowRun {
   @@index([flowId, startedAt])
   @@index([userId, contactId])
   @@map("flow_runs")
+}
+
+model VerificationCode {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  code          String
+  type          String    @default("2fa")
+  signInToken   String?   @map("sign_in_token")
+  expiresAt     DateTime  @map("expires_at")
+  consumedAt    DateTime? @map("consumed_at")
+  signedInAt    DateTime? @map("signed_in_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([code])
+  @@index([signInToken])
+  @@map("verification_codes")
 }
 
 model FlowRunEvent {

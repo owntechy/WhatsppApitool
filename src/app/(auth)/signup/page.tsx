@@ -22,6 +22,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const router = useRouter();
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -55,12 +56,42 @@ export default function SignupPage() {
         return;
       }
 
-      router.push("/login");
+      setSubmitted(true);
     } catch {
       setError("Failed to create account");
       setLoading(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+        <Card className="w-full max-w-md border-slate-800 bg-slate-900">
+          <CardHeader className="items-center text-center">
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <MessageSquare className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-xl text-white">Account created</CardTitle>
+            <CardDescription className="text-slate-400">
+              Your account is pending approval
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-slate-300">
+              A superadmin needs to approve your account before you can sign in.
+              You will receive an email notification once your account is approved.
+            </p>
+            <Button
+              onClick={() => router.push("/login")}
+              className="mt-6 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Back to login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">

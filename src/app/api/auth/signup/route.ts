@@ -35,6 +35,7 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
         fullName,
+        status: "pending",
         profiles: {
           create: {
             fullName,
@@ -44,7 +45,11 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ id: user.id, email: user.email });
+    return NextResponse.json({
+      id: user.id,
+      email: user.email,
+      pending: true,
+    });
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(

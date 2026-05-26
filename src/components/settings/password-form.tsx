@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, KeyRound } from 'lucide-react';
-import { signIn } from 'next-auth/react';
 
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -46,24 +45,24 @@ export function PasswordForm() {
     setSaving(true);
 
     try {
-      const result = await signIn('credentials', {
-        email: profile.email,
-        password: current,
-        redirect: false,
+      const res = await fetch('/api/auth/login-validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: profile.email, password: current }),
       });
-      if (!result?.ok) {
+      if (!res.ok) {
         toast.error('Current password is incorrect');
         return;
       }
 
-      const res = await fetch('/api/auth/change-password', {
+      const changeRes = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: next }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        toast.error(`Password update failed: ${err?.message ?? res.statusText}`);
+      if (!changeRes.ok) {
+        const err = await changeRes.json().catch(() => null);
+        toast.error(`Password update failed: ${err?.message ?? changeRes.statusText}`);
         return;
       }
 

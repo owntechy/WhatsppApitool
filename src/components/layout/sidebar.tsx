@@ -17,6 +17,7 @@ import {
   Settings,
   LogOut,
   User,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import {
@@ -192,6 +193,22 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           <div className="my-4 border-t border-slate-800" />
 
           <ul className="flex flex-col gap-1">
+            {profile?.role === "superadmin" && (
+              <li>
+                <Link
+                  href="/admin/users"
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                    pathname.startsWith("/admin")
+                      ? "bg-primary/10 text-primary"
+                      : "text-slate-400 hover:bg-slate-800 hover:text-white",
+                  )}
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Admin
+                </Link>
+              </li>
+            )}
             {bottomNavItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (

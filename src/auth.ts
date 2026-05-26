@@ -2,7 +2,6 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -14,49 +13,58 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Credentials({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        loginToken: { label: "Login Token", type: "hidden" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+        const loginToken = credentials?.loginToken as string | undefined;
+        if (!loginToken) return null;
 
-        const email = credentials.email as string;
-        const password = credentials.password as string;
-
-        const user = await prisma.user.findUnique({
-          where: { email },
+        const code = await prisma.verificationCode.findFirst({
+          where: {
+            signInToken: loginToken,
+            type: "login",
+            signedInAt: null,
+            expiresAt: { gt: new Date() },
+          },
+          include: { user: true },
         });
 
-        if (!user || !user.password) {
-          return null;
-        }
+        if (!code || !code.user) return null;
 
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) {
-          return null;
-        }
+        await prisma.verificationCode.update({
+          where: { id: code.id },
+          data: { signedInAt: new Date() },
+        });
 
         return {
-          id: user.id,
-          email: user.email,
-          name: user.fullName,
-          image: user.image,
+          id: code.user.id,
+          email: code.user.email,
+          name: code.user.fullName,
+          image: code.user.image,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id!;
+      }
+      if (trigger === "signIn" || trigger === "signUp" || (token.id && token.twoFactorEnabled === undefined)) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: (token.id || user?.id)! },
+          select: { twoFactorEnabled: true },
+        });
+        if (dbUser) {
+          token.twoFactorEnabled = dbUser.twoFactorEnabled;
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.twoFactorEnabled = token.twoFactorEnabled as boolean;
       }
       return session;
     },
