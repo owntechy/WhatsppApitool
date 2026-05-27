@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,18 +61,29 @@ export default function LoginPage() {
       }
 
       if (data.step === "signin" && data.loginToken) {
-        const result = await signIn("credentials", {
-          loginToken: data.loginToken,
-          redirect: false,
+        const csrfRes = await fetch("/api/auth/csrf");
+        const { csrfToken } = await csrfRes.json();
+
+        const cbRes = await fetch("/api/auth/callback/credentials", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ loginToken: data.loginToken, csrfToken, callbackUrl: window.location.href }),
+          redirect: "manual",
         });
 
-        if (result?.error) {
-          setError("Something went wrong. Please try again.");
-          setLoading(false);
+        if (cbRes.status === 302 || cbRes.status === 307) {
+          const loc = cbRes.headers.get("location") ?? "";
+          if (loc.includes("error=")) {
+            setError("Invalid or expired login token. Please try again.");
+            setLoading(false);
+            return;
+          }
+          router.push("/dashboard");
           return;
         }
 
-        router.push("/dashboard");
+        setError("Something went wrong. Please try again.");
+        setLoading(false);
         return;
       }
 
@@ -119,18 +130,32 @@ export default function LoginPage() {
         return;
       }
 
-      const result = await signIn("credentials", {
-        loginToken: data.loginToken,
-        redirect: false,
+      const csrfRes = await fetch("/api/auth/csrf");
+      const { csrfToken } = await csrfRes.json();
+
+      const cbRes = await fetch("/api/auth/callback/credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ loginToken: data.loginToken, csrfToken, callbackUrl: window.location.href }),
+        redirect: "manual",
       });
 
-      if (result?.error) {
-        setError("Something went wrong. Please try again.");
-        setLoading(false);
+      if (cbRes.status === 302 || cbRes.status === 307) {
+        const loc = cbRes.headers.get("location") ?? "";
+        if (loc.includes("error=")) {
+          setError("Invalid or expired login token. Please try again.");
+          setStep("credentials");
+          setLoading(false);
+          return;
+        }
+        router.push("/dashboard");
         return;
       }
 
-      router.push("/dashboard");
+      setError("Something went wrong. Please try again.");
+      setStep("credentials");
+      setLoading(false);
+      return;
     } catch {
       setError("Something went wrong");
       setLoading(false);
