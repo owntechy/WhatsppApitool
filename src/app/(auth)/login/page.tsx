@@ -61,28 +61,18 @@ export default function LoginPage() {
       }
 
       if (data.step === "signin" && data.loginToken) {
-        const csrfRes = await fetch("/api/auth/csrf");
-        const { csrfToken } = await csrfRes.json();
-
-        const cbRes = await fetch("/api/auth/callback/credentials", {
+        const cbRes = await fetch("/api/auth/credentials-callback", {
           method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ loginToken: data.loginToken, csrfToken, callbackUrl: window.location.href }),
-          redirect: "manual",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ loginToken: data.loginToken }),
         });
 
-        if (cbRes.status === 302 || cbRes.status === 307) {
-          const loc = cbRes.headers.get("location") ?? "";
-          if (loc.includes("error=")) {
-            setError("Invalid or expired login token. Please try again.");
-            setLoading(false);
-            return;
-          }
+        if (cbRes.ok) {
           router.push("/dashboard");
           return;
         }
 
-        setError("Something went wrong. Please try again.");
+        setError("Invalid or expired login token. Please try again.");
         setLoading(false);
         return;
       }
@@ -130,24 +120,13 @@ export default function LoginPage() {
         return;
       }
 
-      const csrfRes = await fetch("/api/auth/csrf");
-      const { csrfToken } = await csrfRes.json();
-
-      const cbRes = await fetch("/api/auth/callback/credentials", {
+      const cbRes = await fetch("/api/auth/credentials-callback", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ loginToken: data.loginToken, csrfToken, callbackUrl: window.location.href }),
-        redirect: "manual",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ loginToken: data.loginToken }),
       });
 
-      if (cbRes.status === 302 || cbRes.status === 307) {
-        const loc = cbRes.headers.get("location") ?? "";
-        if (loc.includes("error=")) {
-          setError("Invalid or expired login token. Please try again.");
-          setStep("credentials");
-          setLoading(false);
-          return;
-        }
+      if (cbRes.ok) {
         router.push("/dashboard");
         return;
       }
