@@ -215,10 +215,17 @@ export function createClient(): any {
         },
       }),
     }),
-    channel: () => ({
-      on: () => ({ subscribe: () => {} }),
-      subscribe: () => {},
-    }),
+    channel: () => {
+      const handlers: Array<{ event: string; filter: Record<string, unknown>; callback: (...args: unknown[]) => void }> = [];
+      const obj = {
+        on: (event: string, filter: Record<string, unknown>, callback: (...args: unknown[]) => void) => {
+          handlers.push({ event, filter, callback });
+          return obj;
+        },
+        subscribe: () => {},
+      };
+      return obj;
+    },
     removeChannel: () => {},
     auth: {
       getSession: async () => ({ data: { session: null }, error: null }),

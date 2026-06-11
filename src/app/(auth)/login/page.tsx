@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
   const [devOtp, setDevOtp] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +66,7 @@ export default function LoginPage() {
         });
 
         if (cbRes.ok) {
-          router.push("/dashboard");
+          window.location.href = "/dashboard";
           return;
         }
 
@@ -127,7 +125,7 @@ export default function LoginPage() {
       });
 
       if (cbRes.ok) {
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
         return;
       }
 

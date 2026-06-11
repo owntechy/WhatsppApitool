@@ -64,6 +64,26 @@ export async function POST(request: Request) {
       )
     }
 
+    if (message_type === 'template' && template_name) {
+      const tpl = await prisma.messageTemplate.findFirst({
+        where: { userId, name: template_name },
+        select: { headerType: true },
+      })
+      if (tpl && ['image', 'video', 'document'].includes(tpl.headerType || '')) {
+        const hasHeaderParams = Array.isArray(header_params) && header_params.length > 0
+        if (!hasHeaderParams) {
+          return NextResponse.json(
+            {
+              error:
+                `Template "${template_name}" has a ${tpl.headerType} header that requires a media URL. ` +
+                'Provide a publicly accessible URL for the header media.',
+            },
+            { status: 400 },
+          )
+        }
+      }
+    }
+
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversation_id },
       include: { contact: true },

@@ -79,6 +79,40 @@ export async function POST(request: Request) {
       )
     }
 
+    const templateMeta = await prisma.messageTemplate.findFirst({
+      where: { userId, name: template_name, language: template_language || 'en_US' },
+      select: { headerType: true, bodyText: true },
+    })
+
+    if (templateMeta && ['image', 'video', 'document'].includes(templateMeta.headerType || '')) {
+      const hasHeaderParams = Array.isArray(header_params) && header_params.length > 0
+      const hasRecipientHeaderParams = Array.isArray(newRecipients) && newRecipients.some((r: NewRecipient) => Array.isArray(r.header_params) && r.header_params.length > 0)
+      if (!hasHeaderParams && !hasRecipientHeaderParams) {
+        return NextResponse.json(
+          {
+            error:
+              `Template "${template_name}" has a ${templateMeta.headerType} header that requires a media URL. ` +
+              'Go to the Personalize step and provide a publicly accessible URL for the header media.',
+          },
+          { status: 400 },
+        )
+      }
+    }
+
+    if (templateMeta) {
+      const namedParams = templateMeta.bodyText.match(/\{\{([a-zA-Z_]\w*)\}\}/g)
+      if (namedParams && namedParams.length > 0) {
+        return NextResponse.json(
+          {
+            error:
+              `Template "${template_name}" uses named parameters (${namedParams.join(', ')}) which is not supported. ` +
+              'Create a template with positional parameters ({{1}}, {{2}}, etc.) instead.',
+          },
+          { status: 400 },
+        )
+      }
+    }
+
     const config = await prisma.whatsAppConfig.findUnique({
       where: { userId },
     })

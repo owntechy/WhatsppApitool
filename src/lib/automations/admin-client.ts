@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
 
-export function supabaseAdmin() {
+export function prismaClient() {
   return prisma;
 }

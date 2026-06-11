@@ -15,6 +15,26 @@ function mapKeys(obj: Record<string, unknown>): Record<string, unknown> {
   return result;
 }
 
+/** Tables whose rows belong to a single user and must be scoped. */
+const USER_SCOPED_TABLES = new Set([
+  "contacts",
+  "conversations",
+  "tags",
+  "custom_fields",
+  "contact_notes",
+  "whatsapp_config",
+  "message_templates",
+  "pipelines",
+  "deals",
+  "broadcasts",
+  "automations",
+  "automation_logs",
+  "automation_pending_executions",
+  "flows",
+  "flow_runs",
+  "profiles",
+]);
+
 async function handleSelect(table: string, body: Record<string, unknown>) {
   try {
     const session = await auth();
@@ -22,10 +42,16 @@ async function handleSelect(table: string, body: Record<string, unknown>) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userId = session.user.id;
+
     const where: Record<string, unknown> = {};
 
     if (body.eq && typeof body.eq === "object") {
       Object.assign(where, mapKeys(body.eq as Record<string, string>));
+    }
+
+    if (USER_SCOPED_TABLES.has(table)) {
+      where.userId = userId;
     }
 
     if (body.gte && typeof body.gte === "object") {
@@ -124,6 +150,7 @@ async function handleMutate(table: string, body: Record<string, unknown>) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const model = getPrismaModel(table);
   if (!model) {
@@ -143,11 +170,17 @@ async function handleMutate(table: string, body: Record<string, unknown>) {
       : undefined;
     const eq = rawEq ? mapKeys(rawEq) : undefined;
 
+    const scoped = USER_SCOPED_TABLES.has(table);
+
     if (action === "insert" && data) {
+      if (scoped && typeof data === "object" && !Array.isArray(data)) {
+        (data as Record<string, unknown>).userId = userId;
+      }
       if (Array.isArray(data)) {
         const m = model as { create: Function };
         const records: unknown[] = [];
         for (const item of data) {
+          if (scoped) (item as Record<string, unknown>).userId = userId;
           records.push(await m.create({ data: item }));
         }
         result = records;
@@ -163,6 +196,7 @@ async function handleMutate(table: string, body: Record<string, unknown>) {
           where[k] = v === null ? null : v;
         }
       }
+      if (scoped) where.userId = userId;
       result = await (model as { updateMany: Function }).updateMany({ where, data });
     } else if (action === "upsert" && data && !Array.isArray(data)) {
       const onConflict = body.onConflict as string | undefined;
@@ -174,6 +208,9 @@ async function handleMutate(table: string, body: Record<string, unknown>) {
           if (data[camel] !== undefined) where[camel] = data[camel];
         }
       }
+      if (scoped) {
+        (data as Record<string, unknown>).userId = userId;
+      }
       result = await (model as { upsert: Function }).upsert({
         where,
         create: data,
@@ -182,6 +219,7 @@ async function handleMutate(table: string, body: Record<string, unknown>) {
     } else if (action === "delete") {
       const where: Record<string, unknown> = {};
       if (eq) Object.assign(where, eq);
+      if (scoped) where.userId = userId;
       result = await (model as { deleteMany: Function }).deleteMany({ where });
     }
 
