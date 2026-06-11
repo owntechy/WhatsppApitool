@@ -39,6 +39,7 @@ interface BroadcastPayload {
   template: MessageTemplate;
   audience: AudienceConfig;
   variables: Record<string, VariableMapping>;
+  headerUrl?: string;
 }
 
 interface UseBroadcastSendingReturn {
@@ -77,6 +78,24 @@ type CustomValueIndex = Map<string, Map<string, string>>;
  * built-in-field mappings resolve synchronously; custom fields read
  * from a pre-built index to avoid N+1 queries during the send loop.
  */
+export function resolveHeaderParams(
+  template: MessageTemplate,
+  headerUrl?: string,
+): import('@/lib/whatsapp/meta-api').TemplateHeaderParam[] | undefined {
+  const url = headerUrl || template.header_content;
+  if (!url) return undefined;
+  switch (template.header_type) {
+    case 'image':
+      return [{ type: 'image', image: { link: url } }];
+    case 'video':
+      return [{ type: 'video', video: { link: url } }];
+    case 'document':
+      return [{ type: 'document', document: { link: url } }];
+    default:
+      return undefined;
+  }
+}
+
 export function resolveVariables(
   variables: Record<string, VariableMapping>,
   contact: Contact,
@@ -439,6 +458,7 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
         if (apiRecipients.length === 0) continue;
 
         try {
+          const headerParams = resolveHeaderParams(payload.template, payload.headerUrl);
           const res = await fetch('/api/whatsapp/broadcast', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -446,6 +466,7 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
               recipients: apiRecipients,
               template_name: payload.template.name,
               template_language: payload.template.language ?? 'en_US',
+              header_params: headerParams,
             }),
           });
 

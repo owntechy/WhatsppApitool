@@ -493,7 +493,7 @@ export function MessageThread({
   }, []);
 
   const handleSendTemplate = useCallback(
-    async (template: MessageTemplate, params: string[]) => {
+    async (template: MessageTemplate, params: string[], headerUrl?: string) => {
       if (!conversation) return;
 
       const renderedBody = renderTemplateBody(template.body_text, params);
@@ -511,6 +511,18 @@ export function MessageThread({
       };
       onNewMessage(optimisticMsg);
 
+      let headerParams: unknown[] | undefined;
+      const headerMediaUrl = headerUrl || template.header_content;
+      if (headerMediaUrl && template.header_type) {
+        if (template.header_type === 'image') {
+          headerParams = [{ type: 'image', image: { link: headerMediaUrl } }];
+        } else if (template.header_type === 'video') {
+          headerParams = [{ type: 'video', video: { link: headerMediaUrl } }];
+        } else if (template.header_type === 'document') {
+          headerParams = [{ type: 'document', document: { link: headerMediaUrl } }];
+        }
+      }
+
       try {
         const res = await fetch("/api/whatsapp/send", {
           method: "POST",
@@ -520,6 +532,7 @@ export function MessageThread({
             message_type: "template",
             template_name: template.name,
             template_params: params,
+            header_params: headerParams,
             content_text: renderedBody,
           }),
         });

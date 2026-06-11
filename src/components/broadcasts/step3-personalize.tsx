@@ -25,6 +25,8 @@ interface Step3Props {
   template: MessageTemplate;
   variables: Record<string, VariableMapping>;
   onUpdate: (variables: Record<string, VariableMapping>) => void;
+  headerUrl?: string;
+  onHeaderUrlChange?: (url: string) => void;
   onNext: () => void;
   onBack: () => void;
 }
@@ -51,6 +53,8 @@ export function Step3Personalize({
   template,
   variables,
   onUpdate,
+  headerUrl = '',
+  onHeaderUrlChange,
   onNext,
   onBack,
 }: Step3Props) {
@@ -192,6 +196,29 @@ export function Step3Personalize({
           values.
         </p>
       </div>
+
+      {['image', 'video', 'document'].includes(template.header_type || '') && (
+        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+          <label className="mb-1.5 block text-xs font-medium text-slate-400">
+            {template.header_type === 'image' ? 'Image' : template.header_type === 'video' ? 'Video' : 'Document'} Header URL
+          </label>
+          <Input
+            value={headerUrl ?? ''}
+            onChange={(e) => onHeaderUrlChange?.(e.target.value)}
+            placeholder={
+              template.header_type === 'image'
+                ? 'https://example.com/image.jpg'
+                : template.header_type === 'video'
+                  ? 'https://example.com/video.mp4'
+                  : 'https://example.com/document.pdf'
+            }
+            className="border-slate-700 bg-slate-800 text-white placeholder:text-slate-500"
+          />
+          <p className="mt-1 text-[11px] text-slate-500">
+            Publicly accessible URL. Meta must be able to fetch this URL when sending.
+          </p>
+        </div>
+      )}
 
       {placeholders.length === 0 ? (
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 text-center">

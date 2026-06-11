@@ -26,7 +26,7 @@ import {
 interface TemplatePickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (template: MessageTemplate, params: string[]) => void;
+  onSelect: (template: MessageTemplate, params: string[], headerUrl?: string) => void;
 }
 
 // Meta numbers template placeholders from 1 ({{1}}, {{2}}, …) and the
@@ -58,6 +58,7 @@ export function TemplatePicker({
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<MessageTemplate | null>(null);
   const [params, setParams] = useState<string[]>([]);
+  const [headerUrl, setHeaderUrl] = useState('');
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -107,6 +108,7 @@ export function TemplatePicker({
     if (!next) {
       setSelected(null);
       setParams([]);
+      setHeaderUrl('');
     }
     onOpenChange(next);
   }
@@ -120,11 +122,12 @@ export function TemplatePicker({
     }
     setSelected(template);
     setParams(new Array(vars.length).fill(""));
+    setHeaderUrl('');
   }
 
   function confirm() {
     if (!selected) return;
-    onSelect(selected, params);
+    onSelect(selected, params, headerUrl || undefined);
     handleOpenChange(false);
   }
 
@@ -223,6 +226,27 @@ export function TemplatePicker({
                 />
               </div>
             ))}
+
+            {selected && ['image', 'video', 'document'].includes(selected.header_type || '') && (
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-300">
+                  {selected.header_type === 'image' ? 'Image' : selected.header_type === 'video' ? 'Video' : 'Document'} Header URL
+                </Label>
+                <Input
+                  value={headerUrl}
+                  onChange={(e) => setHeaderUrl(e.target.value)}
+                  placeholder={
+                    selected.header_type === 'image'
+                      ? 'https://example.com/image.jpg'
+                      : selected.header_type === 'video'
+                        ? 'https://example.com/video.mp4'
+                        : 'https://example.com/document.pdf'
+                  }
+                  className="border-slate-700 bg-slate-800 text-white placeholder:text-slate-500"
+                />
+                <p className="text-[11px] text-slate-500">Publicly accessible URL for the header media.</p>
+              </div>
+            )}
           </div>
         )}
 

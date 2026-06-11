@@ -25,6 +25,7 @@ interface BroadcastResult {
 interface NewRecipient {
   phone: string
   params?: string[]
+  header_params?: import('@/lib/whatsapp/meta-api').TemplateHeaderParam[]
 }
 
 export async function POST(request: Request) {
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
       template_name,
       template_language,
       template_params,
+      header_params,
     } = body
 
     let recipients: NewRecipient[]
@@ -137,6 +139,7 @@ export async function POST(request: Request) {
             templateName: template_name,
             language: template_language || 'en_US',
             params: recipient.params ?? [],
+            headerParams: recipient.header_params ?? header_params,
           })
           sentMessageId = result.messageId
           lastError = null

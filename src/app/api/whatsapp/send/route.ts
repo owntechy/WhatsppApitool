@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       media_url,
       template_name,
       template_params,
+      header_params,
       reply_to_message_id,
     } = body
 
@@ -166,6 +167,7 @@ export async function POST(request: Request) {
           to: phone,
           templateName: template_name,
           params: template_params || [],
+          headerParams: header_params,
           contextMessageId,
         })
         return result.messageId

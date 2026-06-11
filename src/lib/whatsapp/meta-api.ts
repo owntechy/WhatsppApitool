@@ -24,14 +24,24 @@ export interface MetaPhoneInfo {
 }
 
 interface MetaErrorResponse {
-  error?: { message?: string; code?: number; type?: string }
+  error?: {
+    message?: string
+    code?: number
+    type?: string
+    error_data?: { details?: string }
+  }
 }
 
 async function throwMetaError(response: Response, fallback: string): Promise<never> {
   let message = fallback
   try {
     const data = (await response.json()) as MetaErrorResponse
-    if (data.error?.message) message = data.error.message
+    if (data.error?.message) {
+      message = data.error.message
+      if (data.error.error_data?.details) {
+        message += ` — ${data.error.error_data.details}`
+      }
+    }
   } catch {
     // response body wasn't JSON — keep the fallback
   }
@@ -113,15 +123,55 @@ export async function sendTextMessage(
   return { messageId: data.messages[0].id }
 }
 
+export type TemplateParam =
+  | string
+  | { type: 'text'; text: string }
+  | {
+      type: 'currency'
+      currency: {
+        fallback_value: string
+        code: string
+        amount_1000: number
+      }
+    }
+  | {
+      type: 'date_time'
+      date_time: {
+        fallback_value: string
+        day?: number
+        month?: number
+        year?: number
+        hour?: number
+        minute?: number
+        calendar?: 'GREGORIAN' | 'SOLAR_HIJRI'
+      }
+    }
+
+export type TemplateHeaderParam =
+  | { type: 'text'; text: string }
+  | { type: 'image'; image: { link: string } }
+  | { type: 'video'; video: { link: string } }
+  | { type: 'document'; document: { link: string; filename?: string } }
+
 export interface SendTemplateMessageArgs {
   phoneNumberId: string
   accessToken: string
   to: string
   templateName: string
   language?: string
-  params?: string[]
+  params?: TemplateParam[]
+  /** Parameters for the header component. Required when the template has a
+   *  non-text header (image/video/document) or a text header with placeholders. */
+  headerParams?: TemplateHeaderParam[]
   /** Meta's message_id of the message being replied to. */
   contextMessageId?: string
+}
+
+function toMetaParam(p: TemplateParam): Record<string, unknown> {
+  if (typeof p === 'string') {
+    return { type: 'text', text: p }
+  }
+  return p
 }
 
 /**
@@ -138,6 +188,7 @@ export async function sendTemplateMessage(
     templateName,
     language = 'en_US',
     params,
+    headerParams,
     contextMessageId,
   } = args
   const url = `${META_API_BASE}/${phoneNumberId}/messages`
@@ -147,13 +198,24 @@ export async function sendTemplateMessage(
     language: { code: language },
   }
 
+  const components: Record<string, unknown>[] = []
+
+  if (headerParams && headerParams.length > 0) {
+    components.push({
+      type: 'header',
+      parameters: headerParams,
+    })
+  }
+
   if (params && params.length > 0) {
-    template.components = [
-      {
-        type: 'body',
-        parameters: params.map((p) => ({ type: 'text', text: String(p) })),
-      },
-    ]
+    components.push({
+      type: 'body',
+      parameters: params.map(toMetaParam),
+    })
+  }
+
+  if (components.length > 0) {
+    template.components = components
   }
 
   const body: Record<string, unknown> = {

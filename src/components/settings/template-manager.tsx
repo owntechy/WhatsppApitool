@@ -50,6 +50,7 @@ interface TemplateFormData {
   language: string;
   body_text: string;
   header_type: string;
+  header_content: string;
   footer_text: string;
 }
 
@@ -64,6 +65,7 @@ const emptyForm: TemplateFormData = {
   language: 'en_US',
   body_text: '',
   header_type: '',
+  header_content: '',
   footer_text: '',
 };
 
@@ -155,6 +157,7 @@ export function TemplateManager() {
         language: form.language.trim() || 'en_US',
         body_text: form.body_text.trim(),
         header_type: form.header_type || null,
+        header_content: form.header_content.trim() || null,
         footer_text: form.footer_text.trim() || null,
         status: 'Draft' as const,
       };
@@ -405,7 +408,7 @@ export function TemplateManager() {
               <Label className="text-slate-300">Header Type</Label>
               <Select
                 value={form.header_type}
-                onValueChange={(val) => setForm({ ...form, header_type: val || '' })}
+                onValueChange={(val) => setForm({ ...form, header_type: val || '', header_content: '' })}
               >
                 <SelectTrigger className="w-full bg-slate-800 border-slate-700 text-white">
                   <SelectValue placeholder="None" />
@@ -422,6 +425,27 @@ export function TemplateManager() {
                 </SelectContent>
               </Select>
             </div>
+
+            {['image', 'video', 'document'].includes(form.header_type) && (
+              <div className="space-y-2">
+                <Label className="text-slate-300">Header Media URL</Label>
+                <Input
+                  placeholder={
+                    form.header_type === 'image'
+                      ? 'https://example.com/image.jpg'
+                      : form.header_type === 'video'
+                        ? 'https://example.com/video.mp4'
+                        : 'https://example.com/document.pdf'
+                  }
+                  value={form.header_content}
+                  onChange={(e) => setForm({ ...form, header_content: e.target.value })}
+                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                />
+                <p className="text-[11px] text-slate-500">
+                  Publicly accessible URL for the header media. Meta must be able to fetch this URL.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label className="text-slate-300">Body Text</Label>
