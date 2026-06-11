@@ -138,7 +138,8 @@ function arcPath(cx: number, cy: number, r: number, startRad: number, endRad: nu
 }
 
 function formatCurrencyShort(v: number): string {
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
-  if (v >= 1_000) return `$${(v / 1_000).toFixed(1)}k`
-  return `$${v.toFixed(0)}`
+  if (v >= 1_00_00_000) return `₹${(v / 1_00_00_000).toFixed(1)}Cr`
+  if (v >= 1_00_000) return `₹${(v / 1_00_000).toFixed(1)}L`
+  if (v >= 1_000) return `₹${(v / 1_000).toFixed(1)}k`
+  return `₹${v.toFixed(0)}`
 }

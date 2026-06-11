@@ -333,7 +333,7 @@ model Deal {
   assignedTo        String?  @map("assigned_to")
   title             String
   value             Decimal  @default(0) @db.Decimal(12, 2)
-  currency          String   @default("USD")
+  currency          String   @default("INR")
   notes             String?
   expectedCloseDate DateTime? @map("expected_close_date")
   status            String   @default("open")

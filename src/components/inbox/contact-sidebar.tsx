@@ -221,7 +221,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
                     </p>
                     <div className="mt-1 flex items-center justify-between text-xs text-slate-400">
                       <span>
-                        {deal.currency ?? "$"}
+                        {deal.currency ?? "₹"}
                         {deal.value.toLocaleString()}
                       </span>
                       {deal.stage && (
