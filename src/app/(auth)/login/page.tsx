@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { MessageSquare, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
@@ -153,7 +154,7 @@ export default function LoginPage() {
               <strong className="text-slate-300">{email}</strong>
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
             <form onSubmit={handleOtpSubmit} className="flex flex-col gap-4">
               {error && (
                 <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
@@ -183,6 +184,7 @@ export default function LoginPage() {
                     setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
                   }
                   required
+                  disabled={loading}
                   className="border-slate-700 bg-slate-800 text-center text-2xl tracking-[8px] text-white placeholder:text-slate-500 focus-visible:border-primary focus-visible:ring-primary/20"
                 />
               </div>
@@ -192,7 +194,13 @@ export default function LoginPage() {
                 disabled={loading || otp.length !== 6}
                 className="mt-2 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
-                {loading ? "Verifying..." : "Verify"}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner /> Verifying...
+                  </span>
+                ) : (
+                  "Verify"
+                )}
               </Button>
 
               <button
@@ -227,60 +235,68 @@ export default function LoginPage() {
             Sign in to your account
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            {error && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                {error}
-              </div>
-            )}
+        <CardContent className="relative">
+            <form onSubmit={handleLogin} className="flex flex-col gap-4">
+              {error && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {error}
+                </div>
+              )}
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email" className="text-slate-300">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus-visible:border-primary focus-visible:ring-primary/20"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-slate-300">
-                  Password
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="email" className="text-slate-300">
+                  Email
                 </Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-primary hover:text-primary/80"
-                >
-                  Forgot password?
-                </Link>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus-visible:border-primary focus-visible:ring-primary/20"
+                />
               </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus-visible:border-primary focus-visible:ring-primary/20"
-              />
-            </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="mt-2 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              {loading ? "Signing in..." : "Sign in"}
-            </Button>
-          </form>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-slate-300">
+                    Password
+                  </Label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-primary hover:text-primary/80"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus-visible:border-primary focus-visible:ring-primary/20"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="mt-2 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner /> Signing in...
+                  </span>
+                ) : (
+                  "Sign in"
+                )}
+              </Button>
+            </form>
 
           <p className="mt-6 text-center text-sm text-slate-400">
             Don&apos;t have an account?{" "}
