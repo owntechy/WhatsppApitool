@@ -14,7 +14,8 @@ export async function POST(request: Request) {
     });
 
     return Response.json({ success: true });
-  } catch {
+  } catch (err) {
+    console.error("[credentials-callback] signIn error:", err);
     return Response.json(
       { success: false, error: "Invalid or expired login token" },
       { status: 401 }

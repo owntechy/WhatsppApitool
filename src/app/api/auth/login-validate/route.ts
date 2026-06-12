@@ -33,7 +33,7 @@ export async function POST(request: Request) {
           code: loginToken,
           type: "login",
           signInToken: loginToken,
-          expiresAt: new Date(Date.now() + 60 * 1000),
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000),
         },
       });
 
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
         code: loginToken,
         type: "login",
         signInToken: loginToken,
-        expiresAt: new Date(Date.now() + 60 * 1000),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
       },
     });
 
