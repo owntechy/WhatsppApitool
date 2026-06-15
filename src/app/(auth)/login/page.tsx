@@ -66,8 +66,6 @@ export default function LoginPage() {
           loginToken: data.loginToken,
           redirect: false,
         });
-          window.location.href = "/dashboard";
-          return;
         if (result?.ok) {
           window.location.href = "/dashboard";
           return;
