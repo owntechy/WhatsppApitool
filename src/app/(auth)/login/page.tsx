@@ -66,8 +66,8 @@ export default function LoginPage() {
           loginToken: data.loginToken,
           redirect: false,
         });
-        console.log(result)
-        alert("Hello")
+          window.location.href = "/dashboard";
+          return;
         if (result?.ok) {
           window.location.href = "/dashboard";
           return;
