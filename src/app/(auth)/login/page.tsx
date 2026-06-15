@@ -38,6 +38,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       console.log(res)
+     
       if (!res.ok) {
         let message = "Invalid email or password";
         try {
@@ -65,7 +66,8 @@ export default function LoginPage() {
           loginToken: data.loginToken,
           redirect: false,
         });
-
+        console.log(result)
+        alert(result?.ok)
         if (result?.ok) {
           window.location.href = "/dashboard";
           return;
