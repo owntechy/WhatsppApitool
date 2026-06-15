@@ -67,8 +67,10 @@ export default function LoginPage() {
           redirect: false,
         });
         if (result?.ok) {
-          window.location.href = "/dashboard";
-          return;
+          console.log(res)
+          console.log(result)
+          // window.location.href = "/dashboard";
+          // return;
         }
 
         setError("Invalid or expired login token. Please try again.");
