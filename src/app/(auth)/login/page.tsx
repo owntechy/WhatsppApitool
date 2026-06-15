@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +37,7 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
+      console.log(res)
       if (!res.ok) {
         let message = "Invalid email or password";
         try {
@@ -60,13 +61,12 @@ export default function LoginPage() {
       }
 
       if (data.step === "signin" && data.loginToken) {
-        const cbRes = await fetch("/api/auth/credentials-callback", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ loginToken: data.loginToken }),
+        const result = await signIn("credentials", {
+          loginToken: data.loginToken,
+          redirect: false,
         });
 
-        if (cbRes.ok) {
+        if (result?.ok) {
           window.location.href = "/dashboard";
           return;
         }
@@ -119,13 +119,12 @@ export default function LoginPage() {
         return;
       }
 
-      const cbRes = await fetch("/api/auth/credentials-callback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ loginToken: data.loginToken }),
+      const result = await signIn("credentials", {
+        loginToken: data.loginToken,
+        redirect: false,
       });
 
-      if (cbRes.ok) {
+      if (result?.ok) {
         window.location.href = "/dashboard";
         return;
       }

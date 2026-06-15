@@ -1,4 +1,5 @@
 import { signIn } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
@@ -6,6 +7,23 @@ export async function POST(request: Request) {
 
     if (!loginToken) {
       return Response.json({ error: "Missing login token" }, { status: 400 });
+    }
+
+    const code = await prisma.verificationCode.findFirst({
+      where: {
+        signInToken: loginToken,
+        type: "login",
+        signedInAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: { user: true },
+    });
+
+    if (!code?.user) {
+      return Response.json(
+        { success: false, error: "Invalid or expired login token" },
+        { status: 401 }
+      );
     }
 
     await signIn("credentials", {
