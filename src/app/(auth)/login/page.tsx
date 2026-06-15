@@ -67,7 +67,7 @@ export default function LoginPage() {
           redirect: false,
         });
         console.log(result)
-        alert(result?.ok)
+        alert("Hello")
         if (result?.ok) {
           window.location.href = "/dashboard";
           return;
